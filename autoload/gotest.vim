@@ -1,7 +1,12 @@
 function! gotest#Test() abort
-  " 最初にコンパイルテスト
-  let l:out = system('go test ' . expand("%:h"))
+  let l:out = system('go test ' . expand("%:p:h"))
   let l:err = v:shell_error
+
+  " Change directory for errorformat because 'go test' wouldn't return
+  " relative file path.
+  let cd = exists('*haslocaldir') && haslocaldir() ? 'lcd ' : 'cd '
+  let dir = getcwd()
+  execute cd fnameescape(expand("%:p:h"))
 
   if v:shell_error
     let temp_errorfomat = &errorformat
@@ -24,6 +29,7 @@ function! gotest#Test() abort
     echo "GoTest Succeed"
     echohl None
   endif
+  execute cd . fnameescape(dir)
 endfunction
 
 let s:efm = ""

@@ -1,5 +1,12 @@
-function! gotest#Test() abort
-  let l:out = system('go test ' . expand("%:p:h"))
+function! gotest#Test(...) abort
+  let args = ['test']
+
+  if a:0
+    call extend(args, a:000, 1)
+  endif
+
+  let l:cmd = ['go'] + l:args
+  let l:out = system(join(l:cmd, ' '))
   let l:err = v:shell_error
 
   " Change directory for errorformat because 'go test' wouldn't return

@@ -5,17 +5,17 @@ function! gotest#Test(...) abort
     call extend(args, a:000, 1)
   endif
 
-  let l:cmd = ['go'] + l:args
-  let l:out = system(join(l:cmd, ' '))
-  let l:err = v:shell_error
-
   " Change directory for errorformat because 'go test' wouldn't return
   " relative file path.
   let cd = exists('*haslocaldir') && haslocaldir() ? 'lcd ' : 'cd '
   let dir = getcwd()
   execute cd fnameescape(expand("%:p:h"))
 
-  if v:shell_error
+  let l:cmd = ['go'] + l:args
+  let l:out = system(join(l:cmd, ' '))
+  let l:err = v:shell_error
+
+  if l:err
     let temp_errorfomat = &errorformat
     let l:winid = win_getid(winnr())
     try

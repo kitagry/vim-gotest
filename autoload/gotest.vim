@@ -1,3 +1,4 @@
+let s:cd = exists('*haslocaldir') && haslocaldir() ? 'lcd ' : 'cd '
 function! gotest#Test(...) abort
   let args = ['test']
 
@@ -7,17 +8,14 @@ function! gotest#Test(...) abort
 
   " Change directory for errorformat because 'go test' wouldn't return
   " relative file path.
-  let cd = exists('*haslocaldir') && haslocaldir() ? 'lcd ' : 'cd '
   let dir = getcwd()
-  execute cd fnameescape(expand("%:p:h"))
+  execute s:cd fnameescape(expand("%:p:h"))
 
   let l:cmd = ['go'] + l:args
   call job_start(l:cmd, {
     \   "callback": function("s:callback"),
-    \   "exit_cb": function("s:exitCb"),
+    \   "exit_cb": function("s:exitCb", [dir]),
     \ })
-
-  execute cd . fnameescape(dir)
 endfunction
 
 let s:msg = ""
@@ -25,13 +23,14 @@ function! s:callback(channel, msg)
     let s:msg .= a:msg . "\n"
 endfunction
 
-function! s:exitCb(channel, code)
+function! s:exitCb(dir, channel, code)
     if a:code == 0
         call setqflist([], 'r')
         cclose
         echohl Function
         echo "GoTest Succeed"
         echohl None
+        execute s:cd . fnameescape(a:dir)
         return
     endif
 
@@ -48,6 +47,7 @@ function! s:exitCb(channel, code)
         let s:msg = ""
         call win_gotoid(l:winid)
         let &errorformat = temp_errorfomat
+        execute s:cd . fnameescape(a:dir)
     endtry
 endfunction
 

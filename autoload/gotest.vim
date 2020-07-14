@@ -12,31 +12,43 @@ function! gotest#Test(...) abort
   execute cd fnameescape(expand("%:p:h"))
 
   let l:cmd = ['go'] + l:args
-  let l:out = system(join(l:cmd, ' '))
-  let l:err = v:shell_error
+  call job_start(l:cmd, {
+    \   "callback": function("s:callback"),
+    \   "exit_cb": function("s:exitCb"),
+    \ })
 
-  if l:err
+  execute cd . fnameescape(dir)
+endfunction
+
+let s:msg = ""
+function! s:callback(channel, msg)
+    let s:msg .= a:msg . "\n"
+endfunction
+
+function! s:exitCb(channel, code)
+    if a:code == 0
+        call setqflist([], 'r')
+        cclose
+        echohl Function
+        echo "GoTest Succeed"
+        echohl None
+        return
+    endif
+
     let temp_errorfomat = &errorformat
     let l:winid = win_getid(winnr())
     try
-      let &errorformat = s:errorformat()
-      cexpr l:out
-      copen
+        let &errorformat = s:errorformat()
+        cexpr s:msg
+        copen
     catch
-      echo v:exception
-      echo v:throwpoint
+        echo v:exception
+        echo v:throwpoint
     finally
-      call win_gotoid(l:winid)
-      let &errorformat = temp_errorfomat
+        let s:msg = ""
+        call win_gotoid(l:winid)
+        let &errorformat = temp_errorfomat
     endtry
-  else
-    call setqflist([], 'r')
-    cclose
-    echohl Function
-    echo "GoTest Succeed"
-    echohl None
-  endif
-  execute cd . fnameescape(dir)
 endfunction
 
 let s:efm = ""
